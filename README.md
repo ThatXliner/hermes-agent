@@ -28,6 +28,11 @@ See the **[original README →](https://github.com/NousResearch/hermes-agent#rea
 
 This fork maintains the following patches on top of upstream:
 
+| Patch | File(s) | Status |
+|-------|---------|--------|
+| Per-task `model`/`provider` override in `delegate_task` ([#35437](https://github.com/NousResearch/hermes-agent/issues/35437)) | `tools/delegate_tool.py` | Upstream PR [\#39282](https://github.com/NousResearch/hermes-agent/pull/39282) closed as duplicate, not merged |
+| Honor YOLO mode in `computer_use` action approval bypass | `tools/computer_use/tool.py` | Backport, not upstreamed |
+
 ```bash
 curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
 ```
