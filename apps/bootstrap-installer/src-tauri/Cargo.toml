@@ -41,7 +41,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 # HTTP — rustls so we don't need OpenSSL on the build box
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
+reqwest = { version = "0.12.28", default-features = false, features = ["rustls-tls", "stream"] }
+# Keep the eMudhra distrust fixes even when resolving an existing Cargo.lock.
+rustls-webpki = "0.103.16"
+webpki-roots = "1.0.10"
 
 # Logging — emitted to a file under HERMES_HOME/logs/ and (optionally) the
 # webview console via Tauri's event channel.
