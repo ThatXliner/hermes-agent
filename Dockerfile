@@ -40,15 +40,26 @@ RUN apt-get -o Acquire::Retries=3 update && \
     make -j"$(nproc)" && \
     make install
 
-FROM ghcr.io/astral-sh/uv:0.11.6-python3.13-trixie@sha256:b3c543b6c4f23a5f2df22866bd7857e5d304b67a564f4feab6ac22044dde719b AS uv_source
-# Node 26 source stage. Debian trixie's bundled nodejs is pinned to 20.x
-# which reached EOL in April 2026 — we copy node + npm from the upstream
-# node:26 image instead (Hermes pins its toolchain to Node 26 everywhere).
-# Bookworm-based slim image used so the produced binary links
-# against glibc 2.36, which runs cleanly on our Debian 13 (trixie, glibc
-# 2.41) runtime.  Bumping to a new Node major is a one-line ARG change; see
-# #4977.
-FROM node:26-bookworm-slim@sha256:9e6f9357d371591e32ab6f2d8a26d63bdd0d17c29eee3f4f3e7e454d9634bf73 AS node_source
+FROM ghcr.io/astral-sh/uv:0.13.4-python3.13-trixie@sha256:d6b4d13b4d926ca0deb4f1bc454aaa7e3bbb02ce1929ec1bd2e94a18c47ad757 AS uv_source
+# Node 26.12.1 removes the compromised eMudhra trust roots. Install the
+# checksum-pinned upstream binaries because its Docker tags have not yet
+# published platform manifests.
+FROM debian:13.4 AS node_source
+ARG TARGETARCH
+RUN apt-get -o Acquire::Retries=3 update && \
+    apt-get -o Acquire::Retries=3 install -y --no-install-recommends ca-certificates curl xz-utils libatomic1 && \
+    rm -rf /var/lib/apt/lists/* && \
+    case "$TARGETARCH" in \
+      amd64) node_arch=x64; node_sha=6170b2d474e1c626f43cff3adc118df9fe3b573258a4fc3d850c8dbc6b079bbd ;; \
+      arm64) node_arch=arm64; node_sha=42aa04922591ee5d4dbc7740d452621acf28508239daa512f5ee8c47ee224fdb ;; \
+      *) echo "Unsupported Node architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac && \
+    curl -fsSL --retry 3 "https://nodejs.org/dist/v26.12.1/node-v26.12.1-linux-${node_arch}.tar.xz" -o /tmp/node.tar.xz && \
+    printf '%s  /tmp/node.tar.xz\n' "$node_sha" | sha256sum -c - && \
+    tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 && \
+    rm /tmp/node.tar.xz && \
+    node --version
+
 FROM debian:13.4
 
 # Disable Python stdout buffering to ensure logs are printed immediately.
